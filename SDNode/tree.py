@@ -281,7 +281,12 @@ class CFNodeTree(NodeTree):
             if t == "Reroute":
                 node = self.nodes.new(type="NodeReroute")
             else:
-                node = self.nodes.new(type=t)
+                try:
+                    node = self.nodes.new(type=t)
+                except RuntimeError as e:
+                    from .manager import TaskManager
+                    TaskManager.put_error_msg(str(e))
+                    continue
             if is_group:
                 node.load(node_info, with_id=False)
             else:
@@ -299,6 +304,12 @@ class CFNodeTree(NodeTree):
 
         for link in data.get("links", []):
             # logger.debug(link)
+            if str(link[1]) not in id_map:
+                logger.warn(f"{_T('|IGNORED|')} Link -> {link[0]} -> {_T('Not Found Node')}: {link[1]}")
+                continue
+            if str(link[3]) not in id_map:
+                logger.warn(f"{_T('|IGNORED|')} Link -> {link[0]} -> {_T('Not Found Node')}: {link[3]}")
+                continue
             from_node = id_node_map[str(link[1])]
             to_node = id_node_map[str(link[3])]
             if not from_node or not to_node:
@@ -657,7 +668,7 @@ def reg_node_reroute():
     bpy.types.NodeReroute.__metadata__ = {}
     bpy.types.NodeReroute.inp_types = []
     bpy.types.NodeReroute.out_types = []
-
+    bpy.types.NodeFrame.class_type = "NodeFrame"
 
 def update_tree_handler():
     try:
@@ -683,6 +694,13 @@ def draw_intern(self, context):
     props.type = "NodeReroute"
     props.use_transform = True
 
+def draw_intern_node_search(self, context):
+    if bpy.app.version <= (3, 6):
+        return
+    layout: bpy.types.UILayout = self.layout
+    if hasattr(bpy.ops.sdn, "node_search"):
+        layout.operator_context = "INVOKE_DEFAULT"
+        layout.operator("sdn.node_search", text="Search", text_ctxt=ctxt, icon="VIEWZOOM")
 
 def set_draw_intern(reg):
     NODE_MT_Utils = getattr(bpy.types, gen_cat_id("Utils"), None)
@@ -690,8 +708,10 @@ def set_draw_intern(reg):
         return
     # bpy.types.NODE_MT_Utils.draw._draw_funcs
     if reg:
+        bpy.types.NODE_MT_add.prepend(draw_intern_node_search)
         NODE_MT_Utils.append(draw_intern)
     else:
+        bpy.types.NODE_MT_add.remove(draw_intern_node_search)
         NODE_MT_Utils.remove(draw_intern)
 
 

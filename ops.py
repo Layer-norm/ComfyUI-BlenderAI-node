@@ -109,6 +109,8 @@ class Ops(bpy.types.Operator):
             desc = _T(action)
         elif action == "Restart":
             desc = _T(action)
+        elif action == "Connect":
+            desc = _T("Connect to existing & running ComfyUI server")
         elif action == "Submit":
             desc = _T("Submit Task and with Clear Cache if Alt Pressed")
         return desc
@@ -209,16 +211,18 @@ class Ops(bpy.types.Operator):
         if self.nt_name:
             tree = bpy.data.node_groups.get(self.nt_name, None)
             self.nt_name = ""
+
         def reset_error_mark(tree):
             if not tree:
                 return
             from mathutils import Color
             for n in tree.nodes:
-                if not n.label.endswith("-ERROR") or n.color != Color((1,0,0)):
+                if not n.label.endswith("-ERROR") or n.color != Color((1, 0, 0)):
                     continue
                 n.use_custom_color = False
                 n.label = ""
         reset_error_mark(tree)
+
         def get_task(tree):
             prompt = tree.serialize()
             workflow = tree.save_json()
@@ -405,6 +409,17 @@ class Ops(bpy.types.Operator):
             self.Launch()
         self.submit()
 
+    def Connect(self):
+        TaskManager.connect_existing = not TaskManager.connect_existing
+        if TaskManager.connect_existing:
+            TaskManager.launch_ip = get_pref().ip
+            TaskManager.launch_port = get_pref().port
+            TaskManager.launch_url = f"http://{get_pref().ip}:{get_pref().port}"
+            rtnode_unreg()
+            rtnode_reg()
+            CFNodeTree.instance = getattr(bpy.context.space_data, "edit_tree", None)
+            TaskManager.start_polling()
+
     def Restart(self):
         TaskManager.restart_server()
         # hack fix tree update crash
@@ -508,6 +523,9 @@ class Ops(bpy.types.Operator):
         try:
             data = bpy.context.window_manager.clipboard
             data = json.loads(data)
+            if not isinstance(data, dict):
+                self.report({"ERROR"}, _T("ClipBoard Content Format Error"))
+                return
             if "workflow" in data:
                 data = data["workflow"]
             tree = self.ensure_tree()
@@ -714,6 +732,7 @@ class Fetch_Node_Status(bpy.types.Operator):
         # t0 = time.time()
         # rtnode_reg_diff()
         # logger.info(_T("RegNodeDiff Time:") + f" {time.time()-t0:.2f}s")
+        Timer.clear()
         t1 = time.time()
         rtnode_unreg()
         t2 = time.time()
@@ -724,6 +743,32 @@ class Fetch_Node_Status(bpy.types.Operator):
         t4 = time.time()
         logger.info(_T("RegNode Time:") + f" {t4-t3:.2f}s")
         CFNodeTree.instance = getattr(bpy.context.space_data, "edit_tree", None)
+        return {"FINISHED"}
+
+
+class NodeSearch(bpy.types.Operator):
+    bl_idname = "sdn.node_search"
+    bl_label = "Node Search"
+    bl_options = {"REGISTER"}
+    bl_property = "item"
+
+    def node_items(self, context):
+        from .SDNode.tree import NodeBase
+        from .utils import _T2
+        return [(sb.class_type, _T2(sb.class_type), "") for sb in NodeBase.__subclasses__()]
+    item: bpy.props.EnumProperty(items=node_items)
+
+    def invoke(self, context, event):
+        context.window_manager.invoke_search_popup(self)
+        return {"CANCELLED"}
+
+    def execute(self, context):
+        try:
+            bpy.ops.node.add_node(use_transform=True, settings=[], type=self.item)
+        except BaseException:
+            self.report({'WARNING'}, f"未定义的节点 > {self.item}")
+
+        bpy.ops.node.translate_attach("INVOKE_DEFAULT")
         return {"FINISHED"}
 
 

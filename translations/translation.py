@@ -4,7 +4,7 @@ from pathlib import Path
 ctxt = "SDN"
 
 REG_CTXT = {ctxt, }
-
+REPLACE_DICT = {}
 PROP_NAME_HEAD = "sdn_"
 INTERNAL_NAMES = {
     "bl_description",
@@ -69,6 +69,8 @@ INTERNAL_NAMES = {
 
 
 def get_reg_name(inp_name):
+    if inp_name.startswith("_"):
+        return PROP_NAME_HEAD + inp_name
     if inp_name in INTERNAL_NAMES:
         return PROP_NAME_HEAD + inp_name
     return inp_name
@@ -110,10 +112,14 @@ other = {
     "ControlNet Init Finished.": "ControlNet 初始化完毕.",
     "If controlnet still not worked, install manually by double clicked {}": "若ControlNet依然无法正常使用, 请手动双击 {} 安装",
     "Execute Node Cancelled!": "执行被跳过!",
+    "Remote Server Connect Failed": "远程服务连接失败",
+    "Executing Node": "正在执行节点",
+    "Execution Cached": "执行缓存",
     # SDNode/nodes.py
     "icon path load error": "预览图配置解析失败",
     "|IGNORED|": "|已忽略|",
     "Not Found Item": "未找到项",
+    "Not Found Node": "未找到节点",
     "Load": "载入",
     "Params not matching with current node": "参数与当前节点不匹配",
     "Params Loading Error": "参数载入错误",
@@ -199,7 +205,7 @@ other = {
     "Node<{}>Directory Not Exists!": "节点<{}>的文件夹路径不存在!",
     "Frame <{}> Not Found in <{}> Node Path!": "帧<{}> 在节点<{}>路径中未找到对应!",
     "Frame <{}> Add to Task!": "帧任务<{}>添加成功!",
-    "Launch": "启动ComfyUI",
+    "Launch": "启动/连接 ComfyUI服务",
     "Restart": "重启ComfyUI",
     "ClipBoard Content Format Error": "剪切板内容格式错误",
     "Submit Task and with Clear Cache if Alt Pressed": "执行节点树, 如果按下了Alt执行 则 强制执行",
@@ -217,6 +223,9 @@ other = {
     "ClearTask": "清理任务",
     "Cancel": "取消任务",
     # preference.py
+    "Server Type": "服务类型",
+    "LocalServer": "本机启动",
+    "RemoteServer": "服务直连(含局域网)",
     "Preview Image Size": "预览图尺寸",
     "Enable High Quality Preview Image": "启用高清预览图",
     "ComfyUI Path": "ComfyUI路径",
@@ -597,12 +606,13 @@ def read_locale(locale):
                     data.update(sv)
     return data
 
-def reg_other_translations(translations_dict:dict, locale:str):
+def reg_other_translations(translations_dict:dict, replace_dict:dict, locale:str):
     for word, translation in LANG_TEXT[locale].items():
         translations_dict[locale][(ctxt, word)] = translation
         translations_dict[locale][(None, word)] = translation
+        replace_dict[locale][word] = translation
         
-def reg_node_ctxt(translations_dict:dict, locale:str):
+def reg_node_ctxt(translations_dict:dict, replace_dict:dict, locale:str):
     # 处理节点注册, 每个节点提供一个ctxt
     # 1. 查找locale
     p = Path(__file__).parent.joinpath(locale, "Nodes")
@@ -615,18 +625,23 @@ def reg_node_ctxt(translations_dict:dict, locale:str):
 
     if locale not in translations_dict:
         translations_dict[locale] = {}
+    if locale not in replace_dict:
+        replace_dict[locale] = {}
     td = translations_dict[locale]
+    rd = replace_dict[locale]
     # 2. 注册所有Node
     for node_name, node_translation in json_data.items():
         ctxt = node_name
         REG_CTXT.add(ctxt)
         td[(ctxt, node_name)] = node_translation.pop("title", node_name)
         td[(None, node_name)] = td[(ctxt, node_name)]
+        rd[node_name] = td[(ctxt, node_name)]
         for part in node_translation.values():
             for wn, wv in part.items():
                 wn = get_reg_name(wn)
                 td[(ctxt, wn)] = wv
                 td[(None, wn)] = wv
+                rd[wn] = wv
                 # if node_name == "EmptyLatentImage": print(f"{node_name} reg: {wn} -> {wv}")
 
 
@@ -636,8 +651,9 @@ for locale in LANG_TEXT:
 translations_dict = {}
 for locale in LANG_TEXT:
     translations_dict[locale] = {}
-    reg_node_ctxt(translations_dict, locale)
-    reg_other_translations(translations_dict, locale)
+    REPLACE_DICT[locale] = {}
+    reg_node_ctxt(translations_dict, REPLACE_DICT, locale)
+    reg_other_translations(translations_dict, REPLACE_DICT, locale)
     
 def get_ctxt(msgctxt):
     if msgctxt in REG_CTXT:

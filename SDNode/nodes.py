@@ -8,6 +8,8 @@ import json
 import math
 import textwrap
 import pickle
+import urllib.request
+import urllib.parse
 from numpy import clip
 from copy import deepcopy
 from hashlib import md5
@@ -397,6 +399,13 @@ class SocketBase(bpy.types.NodeSocket):
     def draw_color(self, context, node):
         return self.color
 
+    if bpy.app.version >= (4, 0):
+        draw_color_simple_ = (1, 0, 0, 1)
+
+        @classmethod
+        def draw_color_simple(cls):
+            return cls.draw_color_simple_
+
 
 class Ops_Swith_Socket(bpy.types.Operator):
     bl_idname = "sdn.switch_socket"
@@ -530,7 +539,10 @@ class Ops_Link_Mask(bpy.types.Operator):
         bpy.context.window_manager.modal_handler_add(self)
         import gpu
         import gpu_extras
-        shader_color = gpu.shader.from_builtin("2D_UNIFORM_COLOR")
+        if bpy.app.version >= (4, 0):
+            shader_color = gpu.shader.from_builtin("UNIFORM_COLOR")
+        else:
+            shader_color = gpu.shader.from_builtin("2D_UNIFORM_COLOR")
         shader_line = gpu.shader.from_builtin("POLYLINE_SMOOTH_COLOR")
         shader_line.uniform_float("viewportSize", gpu.state.viewport_get()[2:4])
         shader_line.uniform_float("lineSmooth", True)
@@ -863,6 +875,19 @@ class NodeParser:
                     else:
                         _desc.add(inp_desc[0])
                         self.SOCKET_TYPE[name][inp] = inp_desc[0]
+            for out_type in desc["output"]:
+                # _desc.add(out_type[0])
+                stype = out_type[0]
+                if isinstance(stype, list):
+                    _desc.add("ENUM")
+                    # 太长 不能注册为 socket type(<64)
+                    hash_type = calc_hash_type(stype)
+                    _desc.add(hash_type)
+                    SOCKET_HASH_MAP[hash_type] = "ENUM"
+                    # self.SOCKET_TYPE[name][inp] = hash_type
+                else:
+                    _desc.add(out_type[0])
+                    # self.SOCKET_TYPE[name][inp] = inp_desc[0]
         return _desc
 
     def _parse_sockets_clss(self):
@@ -884,11 +909,16 @@ class NodeParser:
                 op.socket_name = self.name
                 op.action = "ToProp"
                 row.prop(node, prop, text="", text_ctxt=node.get_ctxt())
-            color = bpy.props.FloatVectorProperty(size=4, default=(rand()**0.5, rand()**0.5, rand()**0.5, 1))
+            rand_color = (rand()**0.5, rand()**0.5, rand()**0.5, 1)
+            color = bpy.props.FloatVectorProperty(size=4, default=rand_color)
             __annotations__ = {"color": color,
                                "index": bpy.props.IntProperty(default=-1),
                                "slot_index": bpy.props.IntProperty(default=-1)}
-            fields = {"draw": draw, "bl_label": stype, "__annotations__": __annotations__}
+            fields = {"draw": draw, 
+                      "bl_label": stype, 
+                      "__annotations__": __annotations__,
+                      "draw_color_simple_": rand_color
+                      }
             SocketDesc = type(stype, (SocketBase,), fields)
             socket_clss.append(SocketDesc)
         return socket_clss
@@ -901,7 +931,7 @@ class NodeParser:
             inp_types = {}
             for key, value in ndesc["input"].get("required", {}).items():
                 inp_types[key] = value
-                if key == "seed" or (nname == "KSamplerAdvanced" and key == "noise_seed"):
+                if key in {"seed", "noise_seed"}:
                     inp_types["control_after_generate"] = [["fixed", "increment", "decrement", "randomize"]]
 
             inp_types.update(opt_types)
@@ -929,7 +959,7 @@ class NodeParser:
                     if socket in {"ENUM", "INT", "FLOAT", "STRING", "BOOLEAN"}:
                         continue
                     # logger.warn(inp)
-                    in1 = self.inputs.new(socket, inp_name)
+                    in1 = self.inputs.new(socket, get_reg_name(inp_name))
                     in1.display_shape = "DIAMOND_DOT"
                     # in1.link_limit = 0
                     in1.index = index
@@ -950,8 +980,10 @@ class NodeParser:
                         continue
                     l = layout
                     # 返回True 则不绘制
-                    if spec_draw(self, context, l, prop):
+                    if self.get_blueprints().draw_button(self, context, l, prop):
                         continue
+                    # if spec_draw(self, context, l, prop):
+                    #     continue
                     if self.is_base_type(prop) and get_ori_name(prop) in self.inp_types:
                         l = Ops_Swith_Socket.draw_prop(l, self, prop)
                     l.prop(self, prop, text=prop, text_ctxt=self.get_ctxt())
@@ -1049,9 +1081,10 @@ class NodeParser:
 
                 elif proptype == "FLOAT":
                     {'default': 8.0, 'min': 0.0, 'max': 100.0}
-                    if "step" in inp[1]:
-                        inp[1]["step"] *= 100
-                    prop = bpy.props.FloatProperty(**inp[1])
+                    if len(inp) > 1:
+                        if "step" in inp[1]:
+                            inp[1]["step"] *= 100
+                        prop = bpy.props.FloatProperty(**inp[1])
                 elif proptype == "BOOLEAN":
                     prop = bpy.props.BoolProperty(**inp[1])
                 elif proptype == "STRING":
@@ -1080,7 +1113,10 @@ class NodeParser:
                                                     update=update)
                 prop = spec_gen_properties(nname, inp_name, prop)
                 properties[reg_name] = prop
-            spec_extra_properties(properties, nname, ndesc)
+            from .blueprints import get_blueprints
+            bp = get_blueprints(nname)
+            bp.extra_properties(properties, nname, ndesc)
+            # spec_extra_properties(properties, nname, ndesc)
             fields = {"init": init,
                       "inp_types": inp_types,
                       "out_types": out_types,
@@ -1090,7 +1126,6 @@ class NodeParser:
                       "__annotations__": properties,
                       "__metadata__": ndesc
                       }
-            # spec_functions(fields, nname, ndesc)
             NodeDesc = type(nname, (NodeBase,), fields)
             NodeDesc.dcolor = (rand() / 2, rand() / 2, rand() / 2)
             node_clss.append(NodeDesc)
@@ -1108,24 +1143,23 @@ def spec_gen_properties(nname, inp_name, prop):
                 continue
             if hasattr(node, "seed"):
                 node["seed"] = seed
-            elif node.class_type == "KSamplerAdvanced":
+            elif hasattr(node, "noise_seed"):
                 node["noise_seed"] = seed
 
-    if nname == "KSamplerAdvanced":
-        if inp_name == "noise_seed":
-            def setter(self, v):
-                try:
-                    _ = int(v)
-                    self["noise_seed"] = v
-                except Exception:
-                    ...
-                set_sync_rand(self, self["noise_seed"])
+    if inp_name == "noise_seed":
+        def setter(self, v):
+            try:
+                _ = int(v)
+                self["noise_seed"] = v
+            except Exception:
+                ...
+            set_sync_rand(self, self["noise_seed"])
 
-            def getter(self):
-                if "noise_seed" not in self:
-                    self["noise_seed"] = "0"
-                return str(self["noise_seed"])
-            prop = bpy.props.StringProperty(default="0", set=setter, get=getter)
+        def getter(self):
+            if "noise_seed" not in self:
+                self["noise_seed"] = "0"
+            return str(self["noise_seed"])
+        prop = bpy.props.StringProperty(default="0", set=setter, get=getter)
     elif inp_name == "seed":
         def setter(self, v):
             try:
@@ -1144,6 +1178,7 @@ def spec_gen_properties(nname, inp_name, prop):
 
 
 def spec_extra_properties(properties, nname, ndesc):
+    return
     if nname == "输入图像":
         prop = bpy.props.PointerProperty(type=bpy.types.Image)
         properties["prev"] = prop
@@ -1215,7 +1250,7 @@ def spec_extra_properties(properties, nname, ndesc):
         prop = bpy.props.CollectionProperty(type=Images)
         properties["prev"] = prop
         properties["lnum"] = bpy.props.IntProperty(default=3, min=1, max=10, name="Image num per line")
-    elif nname == "KSamplerAdvanced" or "seed" in properties:
+    elif "seed" in properties or "noise_seed" in properties:
         prop = bpy.props.BoolProperty(default=False)
         properties["exe_rand"] = prop
 
@@ -1224,7 +1259,11 @@ def spec_extra_properties(properties, nname, ndesc):
                 return
             tree = self.get_tree()
             for node in tree.get_nodes():
-                if (not hasattr(node, "seed") and node.class_type != "KSamplerAdvanced") or node == self:
+                # if (not hasattr(node, "seed") and node.class_type != "KSamplerAdvanced") or node == self:
+                #     continue
+                if node == self:
+                    continue
+                if not (hasattr(node, "seed") or hasattr(node, "noise_seed")):
                     continue
                 node.sync_rand = False
         prop = bpy.props.BoolProperty(default=False, name="Sync Rand", description="Sync Rand", update=update_sync_rand)
@@ -1349,121 +1388,9 @@ def spec_extra_properties(properties, nname, ndesc):
         properties["prop"] = prop
 
 
-def spec_serialize(self, cfg, execute):
-    def hide_gp():
-        if (cam := bpy.context.scene.camera) and (gpos := cam.get("SD_Mask", [])):
-            try:
-                for gpo in gpos:
-                    gpo.hide_render = True
-            except BaseException:
-                ...
-    if not execute:
-        return
-    if self.class_type == "输入图像":
-        ...
-        # if self.mode == "渲染":
-        #     logger.warn(f"{_T('Render')}->{self.image}")
-        #     bpy.context.scene.render.filepath = self.image
-        #     hide_gp()
-        #     bpy.ops.render.render(write_still=True)
-        # elif self.mode == "输入":
-        #     ...
-    elif self.class_type == "Mask":
-        # print(self.channel)
-        if self.disable_render or bpy.context.scene.sdn.disable_render_all:
-            return
-        gen_mask(self)
-    elif hasattr(self, "seed"):
-        cfg["inputs"]["seed"] = int(cfg["inputs"]["seed"])
-    elif self.class_type == "KSamplerAdvanced":
-        cfg["inputs"]["noise_seed"] = int(cfg["inputs"]["noise_seed"])
-    elif self.class_type in {"OpenPoseFull", "OpenPoseHand", "OpenPoseMediaPipeFace", "OpenPoseDepth", "OpenPose", "OpenPoseFace", "OpenPoseLineart", "OpenPoseFullExtraLimb", "OpenPoseKeyPose", "OpenPoseCanny", }:
-        rpath = Path(bpy.path.abspath(bpy.context.scene.render.filepath)) / "MultiControlnet"
-        cfg["inputs"]["image"] = rpath.as_posix()
-        cfg["inputs"]["frame"] = bpy.context.scene.frame_current
-
-
-def spec_functions(fields, nname, ndesc):
-    if nname == "输入图像":
-        def render(self: NodeBase):
-            if self.mode != "渲染":
-                return
-            if self.disable_render or bpy.context.scene.sdn.disable_render_all:
-                return
-
-            @Timer.wait_run
-            def r():
-                logger.warn(f"{_T('Render')}->{self.image}")
-                bpy.context.scene.render.filepath = self.image
-                if (cam := bpy.context.scene.camera) and (gpos := cam.get("SD_Mask", [])):
-                    try:
-                        for gpo in gpos:
-                            gpo.hide_render = True
-                    except BaseException:
-                        ...
-                if bpy.context.scene.use_nodes:
-                    from .utils import set_composite
-                    nt = bpy.context.scene.node_tree
-
-                    with set_composite(nt) as cmp:
-                        render_layer: bpy.types.CompositorNodeRLayers = nt.nodes.new("CompositorNodeRLayers")
-                        if sel_render_layer := nt.nodes.get(self.render_layer, None):
-                            render_layer.scene = sel_render_layer.scene
-                            render_layer.layer = sel_render_layer.layer
-                        if out := render_layer.outputs.get(self.out_layers):
-                            nt.links.new(cmp.inputs["Image"], out)
-                        bpy.ops.render.render(write_still=True)
-                        nt.nodes.remove(render_layer)
-                else:
-                    bpy.ops.render.render(write_still=True)
-            r()
-        fields["pre_fn"] = render
-    if nname == "存储":
-        def post_fn(self: NodeBase, t: Task, result):
-            logger.debug(f"{self.class_type}{_T('Post Function')}->{result}")
-            img_paths = result.get("output", {}).get("images", [])
-            for img in img_paths:
-                if self.mode == "Save":
-                    def f(self, img):
-                        return bpy.data.images.load(img)
-                elif self.mode == "Import":
-                    def f(self, img):
-                        self.image.filepath = img
-                        self.image.filepath_raw = img
-                        self.image.source = "FILE"
-                        if self.image.packed_file:
-                            self.image.unpack(method="REMOVE")
-                        self.image.reload()
-                Timer.put((f, self, img))
-
-        fields["post_fn"] = post_fn
-    if nname == "预览":
-        def post_fn(self: NodeBase, t: Task, result):
-            logger.debug(f"{self.class_type}{_T('Post Function')}->{result}")
-            # return
-            img_paths = result.get("output", {}).get("images", [])
-            if not img_paths:
-                return
-            logger.warn(f"{_T('Load Preview Image')}: {img_paths}")
-
-            def f(self, img_paths: list[str]):
-                self.prev.clear()
-
-                from .manager import TaskManager
-                d = TaskManager.get_temp_directory()
-                for img_path in img_paths:
-                    if isinstance(img_path, dict):
-                        img_path = Path(d).joinpath(img_path.get("filename")).as_posix()
-                    if not Path(img_path).exists():
-                        continue
-                    p = self.prev.add()
-                    p.image = bpy.data.images.load(img_path)
-            Timer.put((f, self, img_paths))
-
-        fields["post_fn"] = post_fn
-
-
 def spec_draw(self: NodeBase, context: bpy.types.Context, layout: bpy.types.UILayout, prop: str, swlink=True):
+    return
+
     def draw_prop_with_link(layout, self, prop, row=True, pre=None, post=None, **kwargs):
         layout = Ops_Swith_Socket.draw_prop(layout, self, prop, row, swlink)
         if pre:
@@ -1540,7 +1467,7 @@ def spec_draw(self: NodeBase, context: bpy.types.Context, layout: bpy.types.UILa
             return True
         if prop in {"exe_rand", "sync_rand"}:
             return True
-    elif self.class_type == "KSamplerAdvanced":
+    elif hasattr(self, "noise_seed"):
         if prop in {"add_noise", "return_with_leftover_noise"}:
             def dpre(layout): layout.label(text=prop, text_ctxt=self.get_ctxt())
             draw_prop_with_link(layout, self, prop, expand=True, pre=dpre, text_ctxt=self.get_ctxt())
@@ -1554,7 +1481,6 @@ def spec_draw(self: NodeBase, context: bpy.types.Context, layout: bpy.types.UILa
             return True
         if prop in {"exe_rand", "sync_rand"}:
             return True
-
     elif self.class_type == "输入图像":
         if prop == "mode":
             if self.mode == "序列图":
