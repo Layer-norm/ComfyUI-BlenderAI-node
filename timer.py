@@ -68,17 +68,20 @@ class Timer:
 
     @staticmethod
     def reg():
-        bpy.app.timers.register(Timer.run1, persistent=True)
-        bpy.app.timers.register(Timer.run2, persistent=True)
+        try:
+            bpy.app.timers.register(Timer.run1, persistent=True)
+            bpy.app.timers.register(Timer.run2, persistent=True)
+        except Exception:
+            ...
 
     @staticmethod
     def unreg():
-        Timer.clear()
         try:
             bpy.app.timers.unregister(Timer.run1)
             bpy.app.timers.unregister(Timer.run2)
         except Exception:
             ...
+        Timer.clear()
 
 class WorkerFunc:
     args = {}
