@@ -296,6 +296,6 @@ BlenderImguiRenderer = Renderer
 if bpy.app.version < (3, 4):
     from .renderer340 import Renderer340
     BlenderImguiRenderer = Renderer340
-elif bpy.app.version < (4, 0):
-    from .renderer400 import Renderer340
+elif bpy.app.version >= (4, 0):
+    from .renderer400 import Renderer400
     BlenderImguiRenderer = Renderer400
