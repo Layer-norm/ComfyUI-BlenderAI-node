@@ -570,7 +570,7 @@ class LocalServer(Server):
         if not pid:
             return
         if sys.platform == "linux":
-            os.kill(pid, signal.SIGKILL)
+            # os.kill(pid, signal.SIGKILL)
             logger.error(f"{_T('Kill Last ComfyUI Process')} id -> {pid}")
             return
 
