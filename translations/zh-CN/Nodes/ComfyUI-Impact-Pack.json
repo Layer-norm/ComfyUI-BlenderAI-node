@@ -377,6 +377,20 @@
             "SEGS": "Seg"
         }
     },
+    "ImpactSEGSPicker": {
+        "title": "Seg选择",
+        "inputs": {
+            "segs": "Seg",
+            "fallback_image_opt": "备用图像"
+        },
+        "widgets": {
+            "picks": "选择",
+            "pick": "选择"
+        },
+        "outputs": {
+            "SEGS": "Seg"
+        }
+    },
     "ReencodeLatent": {
         "title": "重编码Latent",
         "inputs": {
@@ -411,7 +425,7 @@
         }
     },
     "ImpactImageBatchToImageList": {
-        "title": "图像组到图像列表",
+        "title": "图像批次到图像列表",
         "inputs": {
             "image": "图像"
         },
@@ -421,6 +435,15 @@
     },
     "ImpactMakeImageList": {
         "title": "制作图像列表",
+        "inputs": {
+            "image1": "图像"
+        },
+        "outputs": {
+            "IMAGE": "图像"
+        }
+    },
+    "ImpactMakeImageBatch": {
+        "title": "制作图像批次",
         "inputs": {
             "image1": "图像"
         },
@@ -637,6 +660,15 @@
         },
         "outputs": {
             "MASKS": "遮罩组"
+        }
+    },
+    "ImageListToImageBatch": {
+        "title": "图像列表到图像批次",
+        "inputs": {
+            "images": "图像"
+        },
+        "outputs": {
+            "IMAGE": "图像"
         }
     },
     "SegsToCombinedMask": {
