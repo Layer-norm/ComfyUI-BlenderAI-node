@@ -780,7 +780,7 @@ class TaskManager:
     server: Server = FakeServer()
     task_queue = Queue()
     res_queue = Queue()
-    SessionId = {"SessionId": "无限圣杯"}
+    SessionId = {"SessionId": "ComfyUIBlenderAINode"}
     status = {}
     progress = {}
     executing = {}
@@ -1051,7 +1051,7 @@ class TaskManager:
                 setattr(tm, mtype, data)
 
             if mtype == "status":
-                {'status': {'exec_info': {'queue_remaining': 1}}, 'sid': '无限圣杯'}
+                {'status': {'exec_info': {'queue_remaining': 1}}, 'sid': 'ComfyUIBlenderAINode'}
                 SessionId["SessionId"] = data.get("sid", SessionId["SessionId"])
             elif mtype == "executing":
                 {"type": "executing", "data": {"node": "7"}}
