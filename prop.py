@@ -1,6 +1,8 @@
 from __future__ import annotations
 import bpy
 import os
+import subprocess
+import platform
 from pathlib import Path
 
 from .utils import Icon, FSWatcher
@@ -56,7 +58,13 @@ class Prop(bpy.types.PropertyGroup):
     def update_open_presets_dir(self, context):
         if self.open_presets_dir:
             self.open_presets_dir = False
-            os.startfile(str(PRESETS_DIR))
+            match platform.system():
+                case "Win32":
+                    os.startfile(str(PRESETS_DIR))
+                case "Linux":
+                    subprocess.call(['nautilus', str(PRESETS_DIR)])
+                case "Darwin":
+                    subprocess.call(['open', str(PRESETS_DIR)])
 
     open_presets_dir: bpy.props.BoolProperty(default=False, name="Open NodeGroup Presets Folder", update=update_open_presets_dir)
 
@@ -95,7 +103,13 @@ class Prop(bpy.types.PropertyGroup):
     def update_open_groups_dir(self, context):
         if self.open_groups_dir:
             self.open_groups_dir = False
-            os.startfile(str(GROUPS_DIR))
+            match platform.system():
+                case "Win32":
+                    os.startfile(str(GROUPS_DIR))
+                case "Linux":
+                    subprocess.call(['nautilus', str(GROUPS_DIR)])
+                case "Darwin":
+                    subprocess.call(['open', str(GROUPS_DIR)])
 
     open_groups_dir: bpy.props.BoolProperty(default=False, name="Open NodeTree Presets Folder", update=update_open_groups_dir)
 

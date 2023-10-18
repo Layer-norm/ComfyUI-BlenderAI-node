@@ -28,7 +28,7 @@ def get_version():
 
 
 def get_addon_name():
-    return _T("无限圣杯 Node") + get_version()
+    return _T("ComfyUIBlenderAINode Node") + get_version()
 
 
 def _T(word):

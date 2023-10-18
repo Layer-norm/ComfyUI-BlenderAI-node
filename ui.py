@@ -27,7 +27,7 @@ class Panel(bpy.types.Panel):
         sdn = bpy.context.scene.sdn
         row = self.layout.row(align=True)
         row.prop(sdn, 'open_pref', text="", icon="PREFERENCES", text_ctxt=ctxt)
-        if platform.system() != "Darwin":
+        if platform.system() != "Darwin" and platform.system() != "Linux":
             row.operator("wm.console_toggle", text="", icon="CONSOLE", text_ctxt=ctxt)
         # row.prop(sdn, "restart_webui", text="", icon="RECOVER_LAST")
         row.operator(Ops.bl_idname, text="", icon="QUIT", text_ctxt=ctxt).action = "Launch"
