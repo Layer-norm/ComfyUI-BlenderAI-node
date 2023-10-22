@@ -128,9 +128,9 @@ def load_apn_config(data):
     # }
     # ====================================================
     # 其中SD的里的SamplerName分别如下
-    # ['Euler a','Euler','LMS','Heun','DPM2','DPM2 a','DPM++ 2S a','DPM++ 2M','DPM++ SDE','DPM fast','DPM adaptive','LMS Karras','DPM2 Karras','DPM2 a Karras','DPM++ 2S a Karras','DPM++ 2M Karras','DPM++ SDE Karras','DDIM','PLMS']
+    # ['Euler a',        'Euler','LMS','Heun','DPM2', 'DPM2 a',         'DPM++ 2S a',        'DPM++ 2M','DPM++ SDE','DDIM','DPM fast','DPM adaptive','LMS Karras','DPM2 Karras','DPM2 a Karras','DPM++ 2S a Karras','DPM++ 2M Karras','DPM++ SDE Karras','PLMS']
     # 而comfyUI的SamplerName分别如下
-    # ['euler','euler_ancestral','heun','dpm_2','dpm_2_ancestral','lms','dpm_fast','dpm_adaptive','dpmpp_2s_ancestral','dpmpp_sde','dpmpp_2m','ddim','uni_pc','uni_pc_bh2']
+    # ['euler_ancestral','euler','lms','heun','dpm_2','dpm_2_ancestral','dpmpp_2s_ancestral','dpmpp_2m','dpmpp_sde','ddim','dpm_fast','uni_pc', 'uni_pc_bh2','dpm_adaptive',]
     # ====================================================
     
     tree = get_tree()
