@@ -4,6 +4,7 @@ import numpy as np
 import bgl as gl
 import bpy
 import time
+import platform
 # from OpenGL import GL as gl
 from gpu_extras.batch import batch_for_shader
 from ..utils import logger
@@ -90,7 +91,8 @@ class Renderer(BaseOpenGLRenderer):
     def refresh_font_texture_ex(scene=None):
         # save texture state
         self = Renderer.instance
-        if not (img := bpy.data.images.get(".imgui_font", None)) or img.bindcode == 0:
+        if not (img := bpy.data.images.get(".imgui_font", None)) \
+            or (platform.platform == "win32" and img.bindcode == 0):
             ts = time.time()
             width, height, pixels = self.io.fonts.get_tex_data_as_rgba32()
             if not img:
@@ -291,8 +293,8 @@ class Renderer(BaseOpenGLRenderer):
             values.append(buf[0] if n == 1 else buf[:n])
         return values
 
-
 BlenderImguiRenderer = Renderer
+
 if bpy.app.version < (3, 4):
     from .renderer340 import Renderer340
     BlenderImguiRenderer = Renderer340

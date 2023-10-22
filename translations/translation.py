@@ -9,7 +9,19 @@ LOCALE_MAP = {
 # 4.0 zh_HANS -> zh_HANS
 # 3.0 zh_HANS -> zh_CN
 LOCALE_MAP_INV = {}
-if bpy.app.version < (4, 0):
+
+def is_zh_HANS_version():
+    try:
+        bpy.context.preferences.view.language = "XXXXX"
+    except TypeError as e:
+        # import re
+        # find_tuple = re.match(r".*?\('(.*?)\'\).*?", str(e))
+        # if find_tuple and "zh_HANS" in find_tuple.group(1):
+        #     return True
+        return "zh_HANS" in str(e)
+    return False
+
+if not is_zh_HANS_version():
     LOCALE_MAP_INV = {
         "zh_HANS": "zh_CN"
     }
@@ -129,6 +141,9 @@ other = {
     "Remote Server Connect Failed": "远程服务连接失败",
     "Executing Node": "正在执行节点",
     "Execution Cached": "执行缓存",
+    "got response": "获取响应",
+    # SDNode/node_process.py
+    "Executing": "执行中",
     # SDNode/nodes.py
     "icon path load error": "预览图配置解析失败",
     "|IGNORED|": "|已忽略|",
@@ -163,6 +178,7 @@ other = {
     # SDNode/tree.py
     "Invalid Node Type: {}": "检查到无效的节点: {}",
     "ParseNode Time:": "解析节点耗时:",
+    "Changed Node": "变更节点",
     # SDNode/utils.py
     "Gen Mask": "遮罩生成",
     # __init__.py
