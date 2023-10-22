@@ -1,6 +1,8 @@
 import typing
 import bpy
 import os
+import platform
+import subprocess
 from pathlib import Path
 
 from .utils import Icon, _T
@@ -85,27 +87,52 @@ class AddonPreference(bpy.types.AddonPreferences):
     def update_open_dir1(self, context):
         if self.open_dir1:
             self.open_dir1 = False
-            os.startfile(Path(self.model_path) / "models/checkpoints")
+            match platform.system():
+                case "Win32":
+                    os.startfile(Path(self.model_path) / "models/checkpoints")
+                case "Linux":
+                    subprocess.call(['nautilus', Path(self.model_path) / "models/checkpoints"])
+                case "Darwin":
+                    subprocess.call(['open', Path(self.model_path) / "models/checkpoints"])
 
     open_dir1: bpy.props.BoolProperty(default=False, name="Open CKPT Folder", update=update_open_dir1)
 
     def update_open_dir2(self, context):
         if self.open_dir2:
             self.open_dir2 = False
-            os.startfile(Path(self.model_path) / "models/loras")
+            match platform.system():
+                case "Win32":
+                    os.startfile(Path(self.model_path) / "models/loras")
+                case "Linux":
+                    subprocess.call(['nautilus', Path(self.model_path) / "models/loras"])
+                case "Darwin":
+                    subprocess.call(['open', Path(self.model_path) / "models/loras"])
+
     open_dir2: bpy.props.BoolProperty(default=False, name="Open LoRA Folder", update=update_open_dir2)
 
     def update_open_dir3(self, context):
         if self.open_dir3:
             self.open_dir3 = False
-            os.startfile(self.model_path)
+            match platform.system(self.model_path):
+                case "Win32":
+                    os.startfile(self.model_path)
+                case "Linux":
+                    subprocess.call(['nautilus', self.model_path])
+                case "Darwin":
+                    subprocess.call(['open', self.model_path])
 
     open_dir3: bpy.props.BoolProperty(default=False, name="Open ComfyUI Folder", update=update_open_dir3)
 
     def update_open_dir4(self, context):
         if self.open_dir4:
             self.open_dir4 = False
-            os.startfile(Path(self.model_path) / "SDNodeTemp")
+            match platform.system():
+                case "Win32":
+                    os.startfile(Path(self.model_path) / "SDNodeTemp")
+                case "Linux":
+                    subprocess.call(['nautilus', Path(self.model_path) / "SDNodeTemp"])
+                case "Darwin":
+                    subprocess.call(['open', Path(self.model_path) / "SDNodeTemp"])
 
     open_dir4: bpy.props.BoolProperty(default=False,
                                       name="Open Cache Folder",

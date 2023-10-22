@@ -638,6 +638,10 @@ class LocalServer(Server):
     def force_kill(self, pid):
         if not pid:
             return
+        if sys.platform == "linux":
+            # os.kill(pid, signal.SIGKILL)
+            logger.error(f"{_T('Kill Last ComfyUI Process')} id -> {pid}")
+            return
 
         if not PkgInstaller.try_install("psutil"):
             logger.error("psutil not installed please disable proxy and try again!")
