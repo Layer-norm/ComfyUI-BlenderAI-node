@@ -91,7 +91,8 @@ class Renderer(BaseOpenGLRenderer):
     def refresh_font_texture_ex(scene=None):
         # save texture state
         self = Renderer.instance
-        if not (img := bpy.data.images.get(".imgui_font", None)) or img.bindcode == 0:
+        if not (img := bpy.data.images.get(".imgui_font", None)) \
+            or (platform.platform == "win32" and img.bindcode == 0):
             ts = time.time()
             width, height, pixels = self.io.fonts.get_tex_data_as_rgba32()
             if not img:
