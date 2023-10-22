@@ -1,8 +1,8 @@
 import json
-import bpy
 from pathlib import Path
 
 ctxt = "SDN"
+
 LOCALE_MAP = {
     "zh_HANS": "zh_CN"
 }
@@ -317,13 +317,13 @@ other = {
 }
 
 LANG_TEXT = {
-    get_locale_inv("en_US"): {
+    "en_US": {
         # Blender
         "输入图像": "Input Image",
         "存储": "Save",
         "预览": "Preview",
     },
-    get_locale_inv("zh_HANS"): {
+    "zh_CN": {
         **other,
         # 分类
         # "vae": "变分数据",
@@ -616,10 +616,9 @@ def get_json_data_recursive(p: Path) -> dict[str,dict[str, dict]]:
     return json_data
 
 def read_locale(locale):
-    mapped_locale = LOCALE_MAP.get(locale, locale)
-    p = Path(__file__).parent.joinpath(mapped_locale)
+    p = Path(__file__).parent.joinpath(locale)
     if not p.exists():
-        p = Path(__file__).parent.joinpath(mapped_locale.replace("_", "-"))
+        p = Path(__file__).parent.joinpath(locale.replace("_", "-"))
     if not p.exists() or p.is_file():
         return {}
     json_data = get_json_data(p)
@@ -644,12 +643,11 @@ def reg_other_translations(translations_dict:dict, replace_dict:dict, locale:str
         replace_dict[locale][word] = translation
         
 def reg_node_ctxt(translations_dict:dict, replace_dict:dict, locale:str):
-    mapped_locale = LOCALE_MAP.get(locale, locale)
     # 处理节点注册, 每个节点提供一个ctxt
     # 1. 查找locale
-    p = Path(__file__).parent.joinpath(mapped_locale, "Nodes")
+    p = Path(__file__).parent.joinpath(locale, "Nodes")
     if not p.exists():
-        p = Path(__file__).parent.joinpath(mapped_locale.replace("_", "-"), "Nodes")
+        p = Path(__file__).parent.joinpath(locale.replace("_", "-"), "Nodes")
     if not p.exists():
         return {}
     
