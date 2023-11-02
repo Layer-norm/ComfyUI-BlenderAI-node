@@ -1273,6 +1273,33 @@
             "MODEL": "模型"
         }
     },
+    "FreeU_V2": {
+        "title": "FreeU_V2模型重加权",
+        "inputs": {
+            "model": "模型"
+        },
+        "widgets": {
+            "b1": "B1",
+            "b2": "B2",
+            "s1": "S1",
+            "s2": "S2"
+        },
+        "outputs": {
+            "MODEL": "模型"
+        }
+    },
+    "HyperTile": {
+        "title": "超分块",
+        "inputs":{ 
+            "model": "模型"
+        },
+        "widgets": {
+            "tile_size": "分块尺寸",
+            "swap_size": "分割尺寸",
+            "max_depth": "最大深度",
+            "scale_depth": "缩放深度"
+        }
+    },
 
 
 

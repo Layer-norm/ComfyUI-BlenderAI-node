@@ -49,8 +49,11 @@
         "LoraBlockWeight": "LoRA分层权重",
         "Seg": "Seg",
         "a1111_compat": "A1111适配",
+        "prompt": "提示词",
         "analysis": "解析",
+        "Backend": "后端",
     "Inspire": "Inspire节点2",
+        "Batch": "批处理",
     "postprocessing1": "后处理",
         "Blends": "混合",
         "Effects": "效果",
@@ -153,6 +156,7 @@
     "ipadapter": "IP适配",
     "everywhere": "全局输入",
     "Video Helper Suite 🎥🅥🅗🅢": "视频助手",
+    "FABRIC": "Fabric节点",
         
 
 

@@ -1,7 +1,7 @@
 bl_info = {
     'name': '无限圣杯-节点',
     'author': '幻之境开发小组-会飞的键盘侠、只剩一瓶辣椒酱',
-    'version': (1, 3, 2),
+    'version': (1, 3, 4),
     'blender': (3, 0, 0),
     'location': '3DView->Panel',
     'category': '辣椒出品',
@@ -17,13 +17,16 @@ from .translations import translations_dict
 from .utils import Icon
 from .timer import timer_reg, timer_unreg
 from .preference import AddonPreference
-from .ops import Ops, Ops_Mask, Load_History, Copy_Tree, Load_Batch, Fetch_Node_Status,  Sync_Stencil_Image, NodeSearch
+from .ops import Ops, Ops_Mask, Load_History, Popup_Load, Copy_Tree, Load_Batch, Fetch_Node_Status,  Sync_Stencil_Image, NodeSearch
 from .ui import Panel, HISTORY_UL_UIList, HistoryItem
 from .SDNode.history import History
 from .prop import RenderLayerString, Prop
 from .Linker import linker_register, linker_unregister
-
-clss = [Panel, Ops, RenderLayerString, Prop, HISTORY_UL_UIList, HistoryItem, Ops_Mask, Load_History, Copy_Tree, Load_Batch, Fetch_Node_Status, Sync_Stencil_Image, NodeSearch, EnableMLT]
+try:
+    from .External import listen
+except:
+    ...
+clss = [Panel, Ops, RenderLayerString, Prop, HISTORY_UL_UIList, HistoryItem, Ops_Mask, Load_History, Popup_Load, Copy_Tree, Load_Batch, Fetch_Node_Status, Sync_Stencil_Image, NodeSearch, EnableMLT]
 reg, unreg = bpy.utils.register_classes_factory(clss)
 
 def dump_info():
