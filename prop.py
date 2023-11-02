@@ -1,6 +1,7 @@
 from __future__ import annotations
 import bpy
 import os
+import json
 from pathlib import Path
 
 from .utils import Icon, FSWatcher
@@ -146,12 +147,40 @@ class Prop(bpy.types.PropertyGroup):
     batch_count: bpy.props.IntProperty(default=1, min=1, name="Batch exec num")
     loop_exec: bpy.props.BoolProperty(default=False, name="Loop exec")
     render_layer: bpy.props.CollectionProperty(type=RenderLayerString)
-    linker_node: bpy.props.StringProperty(name="Linker Node Name")
-    linker_socket: bpy.props.StringProperty(name="Linker Socket Name")
-    linker_socket_out: bpy.props.BoolProperty(default=False, name="Linker Socket Out")
-    linker_socket_index: bpy.props.IntProperty(name="Linker Socket Index")
-    linker_search_content: bpy.props.StringProperty(name="Linker Search Content")
     show_pref_general: bpy.props.BoolProperty(default=False, name="General Setting", description="Show General Setting")
+    def import_bookmark_set(self, value):
+        from .kclogger import logger
+        from .utils import PngParse, _T
+        from .SDNode.tree import get_tree, TREE_TYPE
+        
+        path = Path(value)
+        if not path.exists() or path.suffix.lower() not in {".png", ".json"}:
+            logger.error(_T("Image not found or format error(png/json)"))
+            logger.error(str(path))
+            logger.error(path.cwd())
+            return
+        data = None
+        if path.suffix.lower() == ".png":
+            odata = PngParse.read_text_chunk(value)
+            data = odata.get("workflow")
+            if not data:
+                logger.error(_T("Load Preset from Image Error -> MetaData Not Found in") + " " + str(odata))
+                return
+        elif path.suffix.lower() == ".json":
+            data = path.read_text()
+
+        tree = get_tree(current=True)
+        if not tree:
+            bpy.ops.node.new_node_tree(type=TREE_TYPE, name="NodeTree")
+            tree = get_tree(current=True)
+        if not tree:
+            return
+        data = json.loads(data)
+        if "workflow" in data:
+            data = data["workflow"]
+        tree.load_json(data)
+
+    import_bookmark: bpy.props.StringProperty(name="Preset Bookmark", default=str(Path.cwd()), subtype="FILE_PATH", set=import_bookmark_set)
 
 
 def render_layer_update():

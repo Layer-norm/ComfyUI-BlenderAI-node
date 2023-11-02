@@ -188,7 +188,6 @@ other = {
     # SDNode/utils.py
     "Gen Mask": "遮罩生成",
     # __init__.py
-    "Image not found or format error(png/json)": "魔法图鉴不存在或格式不正确(仅png/json)",
     "Execute Node Tree": "运行节点树",
     "Stop Loop": "终止循环",
     "Node Tree": "节点树",
@@ -220,7 +219,6 @@ other = {
     "Launch ComfyUI": "打开ComfyUI",
     "Random All": "随机所有",
     "Preset Name": "法典烙印",
-    "Load Preset from Image Error -> MetaData Not Found in": "从图鉴加载失败, 元数据为",
     # prop.py
     "Frame Mode": "渲染模式",
     "SingleFrame": "单帧",
@@ -232,6 +230,8 @@ other = {
     "Batch exec num": "批量执行数",
     "Loop exec": "循环执行",
     "Show General Setting": "显示启动设置",
+    "Image not found or format error(png/json)": "魔法图鉴不存在或格式不正确(仅png/json)",
+    "Load Preset from Image Error -> MetaData Not Found in": "从图鉴加载失败, 元数据为",
     # ops.py
     "No NodeTree Found": "节点树为空",
     "Node Not Found: ": "节点未找到",
@@ -307,6 +307,12 @@ other = {
     "-Good friends exploring in the AI world (alphabetical order)": "-在AI世界探索的好朋友们(首字母排序)",
     "\"Thank you, these adventurers who are exploring and sharing their experience in the AI field, hurry up and follow them\"": "“感谢，这些在AI领域探索并分享经验的冒险者，快去关注啦～”",
     "Stencil Offset Size": "镂板偏移大小",
+    "Drag Link Result Count": "拖拽连接显示行列数",
+    "Drag Link Result Count Column": "列数",
+    "Drag Link Result Count Row": "行数",
+    "Drag Link Result Page Next": "下一页",
+    "Drag Link Result Page Prev": "上一页",
+    "Drag Link Result Page Current": "当前页",
     # MLT
     " Prompts": "提示词",
     "MLT": "多行文本",
@@ -322,7 +328,11 @@ other = {
     "IMAGE": "图像",
     # Internal
     "NodeReroute": "转接点",
-    "NodeFrame": "框"
+    "NodeFrame": "框",
+    # External/listen/hook
+    "Import [{}] as {}?": "导入 [{}] 为{}?",
+    "BatchTaskTable": "任务表",
+    "NodeTree": "节点树"
 }
 
 LANG_TEXT = {
